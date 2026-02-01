@@ -1,0 +1,42 @@
+on: push
+
+permissions:
+  contents: read # 允许读取仓库的代码内容（拉取代码必须）
+  pages: write # 允许向GitHub Pages写入部署内容（发布页面必须）
+  id-token: write # 允许生成身份验证令牌，用于GitHub Pages的身份校验（安全机制）
+
+concurrency:
+  group: "pages" # 给并发任务分组，名称为pages（所有该工作流的任务都归到这个组）
+  cancel-in-progress: false # 不取消正在执行的部署任务
+
+jobs:
+  npm-build:
+    runs-on: ubuntu-latest
+    name: npm-build工作
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 安装pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 10.22.0
+
+      - name: 安装依赖
+        run: pnpm install
+
+      - name: 打包
+        run: pnpm run build
+
+      - name: 部署
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          # Upload entire repository
+          path: "./dist"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
